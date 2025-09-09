@@ -58,32 +58,59 @@ We developed and tested Chatterbox on Python 3.11 on Debian 11 OS; the versions 
 
 # Usage
 ```python
+import torch
 import torchaudio as ta
 from chatterbox.tts import ChatterboxTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
-# English example
-model = ChatterboxTTS.from_pretrained(device="cuda")
+# --- FIX: Define the device first ---
+# This will automatically use the GPU if available, otherwise it will use the CPU.
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+
+# --- English example ---
+# The rest of the code now uses the 'device' variable for consistency
+model = ChatterboxTTS.from_pretrained(device=device)
 
 text = "Ezreal and Jinx teamed up with Ahri, Yasuo, and Teemo to take down the enemy's Nexus in an epic late-game pentakill."
+print("Generating English audio...")
 wav = model.generate(text)
 ta.save("test-english.wav", wav, model.sr)
+print("Saved to test-english.wav")
 
-# Multilingual examples
+# --- Multilingual examples ---
 multilingual_model = ChatterboxMultilingualTTS.from_pretrained(device=device)
 
+# French example
 french_text = "Bonjour, comment ça va? Ceci est le modèle de synthèse vocale multilingue Chatterbox, il prend en charge 23 langues."
-wav_french = multilingual_model.generate(spanish_text, language_id="fr")
-ta.save("test-french.wav", wav_french, model.sr)
+print("Generating French audio...")
+# --- FIX: Changed spanish_text to french_text ---
+wav_french = multilingual_model.generate(french_text, language_id="fr")
+ta.save("test-french.wav", wav_french, multilingual_model.sr) # Use multilingual_model.sr
+print("Saved to test-french.wav")
 
+
+# Chinese example
 chinese_text = "你好，今天天气真不错，希望你有一个愉快的周末。"
+print("Generating Chinese audio...")
 wav_chinese = multilingual_model.generate(chinese_text, language_id="zh")
-ta.save("test-chinese.wav", wav_chinese, model.sr)
+ta.save("test-chinese.wav", wav_chinese, multilingual_model.sr) # Use multilingual_model.sr
+print("Saved to test-chinese.wav")
 
+
+# --- Voice Cloning Example ---
 # If you want to synthesize with a different voice, specify the audio prompt
-AUDIO_PROMPT_PATH = "YOUR_FILE.wav"
-wav = model.generate(text, audio_prompt_path=AUDIO_PROMPT_PATH)
-ta.save("test-2.wav", wav, model.sr)
+# Note: You must change "YOUR_FILE.wav" to a real file path for this part to work.
+try:
+    AUDIO_PROMPT_PATH = "YOUR_FILE.wav" # <-- CHANGE THIS
+    print(f"\nAttempting voice cloning with: {AUDIO_PROMPT_PATH}")
+    wav_cloned = model.generate(text, audio_prompt_path=AUDIO_PROMPT_PATH)
+    ta.save("test-cloned-voice.wav", wav_cloned, model.sr)
+    print("Saved cloned voice audio to test-cloned-voice.wav")
+except FileNotFoundError:
+    print(f"Could not find the audio prompt file '{AUDIO_PROMPT_PATH}'. Skipping voice cloning example.")
+except Exception as e:
+    print(f"An error occurred during voice cloning: {e}")
 ```
 See `example_tts.py` and `example_vc.py` for more examples.
 
